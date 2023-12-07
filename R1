@@ -1,0 +1,86 @@
+公众号推文链接
+
+https://mp.weixin.qq.com/s/uu-zA4CVR6MwMvTkmhJFUA     
+https://mp.weixin.qq.com/s/fxPEliz1_TMpGCavkz5VGg
+
+
+1.彩色标签条形图
+#读入数据；
+dt1<-read.table("koenrich.xls",sep = "\t",header = T)
+#指定纵轴标签顺序,按照输入文件的顺序排序，否则默认按照首字母顺序,同时逆序绘制，保持与表格顺序一致；
+dt1$KEGG_A_Class<-factor(dt1$KEGG_A_Class,
+                         levels = rev(unique(dt1$KEGG_A_Class)),
+                         ordered = TRUE)
+dt1$KEGG_B_Class<-factor(dt1$KEGG_B_Class,  
+                         levels = rev(unique(dt1$KEGG_B_Class)),
+                         ordered = TRUE)
+# 加载ggplot2包；
+library(ggplot2)
+#建立数据(Genes.Number, KEGG_B_Class)与图形（点）的映射关系；
+p1<-ggplot(dt1, aes(x=Genes_Number,
+                    y=KEGG_B_Class,
+                    fill=KEGG_A_Class,na.rm = FALSE))+
+  geom_bar(stat="identity",na.rm = FALSE)+
+ geom_text(aes(x=Genes_Number,y=KEGG_B_Class,label=label),size=2.5,hjust="left",nudge_x=0.1)+
+  scale_x_continuous(limits = c(0, 25),expand=expansion(mult = c(0, .1)))+
+  labs(x="Number of Gene",y="",title="KEGG pathway anotation")
+p1
+
+#获取颜色；
+g <- ggplot_build(p1)
+mycol<-g$data[[1]]["fill"]
+col<-rev(mycol[,1])
+#将A Class对应的颜色设为深黑色；
+num <- rev(dt1$Genes_Number)
+index <- which(num==0)
+col[index] <- "grey10"
+
+#自定义图表主题，对图表做精细调整；
+top.mar=0.2
+right.mar=0.2
+bottom.mar=0.2
+left.mar=0.2
+mytheme1<-theme(plot.title = element_text(size = rel(1),hjust = 0.5,face = "bold"),
+                          axis.title = element_text(size = rel(1)),
+                          axis.text.y = element_text(size=rel(0.85),
+                                                     colour =col,face = "bold"),
+                          legend.position = "none",
+                          plot.margin=unit(x=c(top.mar,right.mar,
+                                               bottom.mar,left.mar),
+                                           units="inches"))
+#查看绘图效果；
+p1+mytheme1
+
+
+3.漂亮的玫瑰图  南丁格尔玫瑰图，特别是当你的数据具有周期性的时候，比如四季变化、昼夜节律等，非常适合。
+#读入数据；
+dt <- read.csv("test_data.csv")
+#实用month.abb[]将月份转换为英文缩写；
+dt$Month <- month.abb[dt$Month]
+#载入相关的R包；
+library(dplyr)
+library(ggplot2)
+#转成tibble格式；
+df <- as_tibble(dt)
+#将月份转换成因子，固定顺序；
+df$Month <- factor(df$Month,levels = unique(df$Month),ordered = T)
+#将季度数值转成字符；
+df$Quarter <- as.character(df$Quarter) 
+
+#提取作图数据；
+df1 <- filter(df,Group=="Day")
+#自定义颜色；
+subcol<-rainbow(12)
+mycol1<-colorRampPalette(subcol[1:4])(12)
+mycol2<-colorRampPalette(c("#A5CC26","yellow","orange","tomato"))(12)
+
+#绘制相互叠合的玫瑰图；
+p1 <- ggplot(df1,aes(x = Month, y=Length,fill=Month))+
+  geom_col(width = 1.2,color=NA,alpha=1)+
+  geom_text(aes(label = Length),nudge_y=-2,
+            colour="white",size=3)+ 
+  ylim(-1.2,17)+
+  scale_fill_manual(values = mycol1)+
+  coord_polar(start = 0)+
+  theme_void()
+p1
